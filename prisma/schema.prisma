@@ -1,0 +1,30 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Video {
+  id         String     @id @default(uuid())
+  name       String
+  size       Int
+  duration   Int?
+  status     String     @default("uploaded")
+  filePath   String
+  createdAt  DateTime   @default(now())
+  trimmedPath  String?   // Add this
+  subtitles  Subtitle[] // 1-to-many relation
+}
+
+model Subtitle {
+  id        String   @id @default(uuid())
+  videoId   String
+  text      String
+  startTime Int      // In seconds
+  endTime   Int      // In seconds
+
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+}

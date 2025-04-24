@@ -1,0 +1,56 @@
+# Yarn (Berry)
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+!.yarnrc.yml
+!.yarnrc
+.pnp.*
+.pnp.loader.mjs
+.yarnrc.yml
+
+# Don't track cache if you're not using zero-installs
+.yarn/cache
+
+# Node Modules (just in case)
+node_modules/
+
+# Output directories
+build/
+dist/
+lib/
+
+# Temporary files
+tmp/*
+*.log
+*.tmp
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.*.local
+
+# Testing
+src/**/__tests__/*
+!src/**/*.test.ts
+!src/**/*.spec.ts
+!src/**/*.e2e-spec.ts
+coverage/
+jest.config.js
+jest.setup.js
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Misc
+*.local
+*.bak
+*.swp
+*.swo
+
+# Maps
+*.js.map
