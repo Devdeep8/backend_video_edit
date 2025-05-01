@@ -215,3 +215,41 @@ export const triggerRender = async (req: Request, res: Response): Promise<void> 
 };
 
 
+export const downloadVideo = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  try {
+    const video = await prisma.video.findUnique({
+      where: { id },
+    });
+
+    if (!video) {
+      res.status(404).json({ error: "Video not found" });
+      return;
+    }
+
+    if (!video.trimmedPath) {
+      res.status(400).json({ error: "Rendered video not available yet" });
+      return;
+    }
+
+    const renderedPath = path.join(process.cwd(), "renders", video.trimmedPath);
+
+    if (!fs.existsSync(renderedPath)) {
+      res.status(404).json({ error: "Rendered file not found on server" });
+      return;
+    }
+
+    res.download(renderedPath, (err) => {
+      if (err) {
+        console.error("Error sending file:", err);
+        res.status(500).json({ error: "Error sending file" });
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
