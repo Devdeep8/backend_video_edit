@@ -107,10 +107,7 @@ export const trimVideo = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-export const addSubtitle = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const addSubtitle = async (req: Request, res: Response): Promise<void> => {
   const videoId = req.params.id;
   const { subtitleText, start, end } = req.body;
 
@@ -123,13 +120,13 @@ export const addSubtitle = async (
     }
 
     // Prepare paths
-    const inputPath = path.resolve(video.filePath).replace(/\\/g, "/");
-    const subsDir = path.resolve("uploads", "subtitles").replace(/\\/g, "/");
+    const inputPath = path.resolve(video.filePath);
+    const subsDir = path.resolve("uploads", "subtitles");
     const srtName = `subtitle_${Date.now()}.srt`;
-    const srtPath = path.join(subsDir, srtName).replace(/\\/g, "/");
-    const outDir = path.resolve("uploads", "subtitled").replace(/\\/g, "/");
+    const srtPath = path.join(subsDir, srtName);
+    const outDir = path.resolve("uploads", "subtitled");
     const outName = `subtitled_${Date.now()}.mp4`;
-    const outputPath = path.join(outDir, outName).replace(/\\/g, "/");
+    const outputPath = path.join(outDir, outName);
 
     // Ensure directories exist
     [subsDir, outDir].forEach((dir) => {
@@ -145,20 +142,26 @@ ${subtitleText}
 `;
     fs.writeFileSync(srtPath, srtContent);
 
-    // Run FFmpeg
+    console.log("Input:", inputPath);
+    console.log("SRT Path:", srtPath);
+    console.log("Output:", outputPath);
+
+    // Run FFmpeg to burn subtitles into the video
     ffmpeg(inputPath)
-      .input(srtPath)
       .outputOptions([
-        "-map 0", // Map video/audio
-        "-map 1", // Map subtitles
-        "-c:v copy", // Copy video
-        "-c:a copy", // Copy audio
-        "-c:s mov_text", // Subtitle codec
-        "-metadata:s:s:0 language=eng", // Optional: Set language to English
-        "-disposition:s:0 default",
-        "-y", // overwrite
+        "-vf", `subtitles='${srtPath.replace(/\\/g, "/")}'`, // IMPORTANT: Burn subtitles
+        "-c:v libx264",
+        "-preset veryfast",
+        "-crf 23",
+        "-c:a copy",
+        "-y", // Overwrite output
       ])
-      .on("stderr", (stderrLine) => console.error("FFmpeg stderr:", stderrLine))
+      .on("start", (commandLine) => {
+        console.log("FFmpeg command:", commandLine);
+      })
+      .on("stderr", (stderrLine) => {
+        console.log("FFmpeg stderr:", stderrLine);
+      })
       .on("error", (err) => {
         console.error("FFmpeg error:", err.message);
         res.status(500).json({ error: "Failed to add subtitles" });
@@ -169,7 +172,7 @@ ${subtitleText}
           where: { id: videoId },
           data: { filePath: outputPath, status: "subtitled" },
         });
-        res.status(200).json({ message: "Subtitles added", path: outputPath });
+        res.status(200).json({ message: "Subtitles added and burned", path: outputPath });
       })
       .save(outputPath);
   } catch (err) {
